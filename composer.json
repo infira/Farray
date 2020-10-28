@@ -1,14 +1,15 @@
 {
-  "name"       : "infira/farray",
-  "description": "Extended array",
-  "license"    : "MIT",
-  "authors"    : [
+  "name"             : "infira/farray",
+  "description"      : "Extended array",
+  "license"          : "MIT",
+  "authors"          : [
 	{
 	  "name" : "Gen Taliaru",
 	  "email": "gen@infira.ee"
 	}
   ],
-  "autoload"   : {
+  "minimum-stability": "dev",
+  "autoload"         : {
 	"files": ["src/init.php"],
 	"psr-4": {
 	  "Infira\\Farray\\extendors\\": "src/extendors",
@@ -16,11 +17,11 @@
 	  "Infira\\Farray\\"           : "src/"
 	}
   },
-  "require"    : {
+  "require"          : {
 	"infira/utils": "1.*"
   },
 
-  "require-dev": {
+  "require-dev"      : {
 	"infira/errorhandler": "dev-master"
   }
 }
