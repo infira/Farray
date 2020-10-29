@@ -128,6 +128,9 @@ trait Farray_Abs
 	
 	private $rawFields = [];
 	
+	/**
+	 * @param array|string $field
+	 */
 	public function addRawField($field)
 	{
 		foreach (Variable::toArray($field) as $field)
