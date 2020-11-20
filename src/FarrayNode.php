@@ -3,18 +3,17 @@
 namespace Infira\Farray;
 
 use Infira\Farray\plugins\Farray_Abs;
-use Infira\Utils\Is;
-use FarrayNodeExtendor;
-use FarrayNodeExtendor2;
 use Infira\Farray\plugins\Debug;
 use Infira\Utils\Variable;
 use ArrayObject;
 
 class FarrayNode extends FarrayObject
 {
-	private $TYPE = "node";
-	use FarrayNodeExtendor;
-	use FarrayNodeExtendor2;
+	private $TYPE                    = "node";
+	private $fieldsThatAreGettedOnce = [];
+	private $__setFieldValueIsCalled = [];
+	
+	use \FarrayNodeExtendor;
 	
 	use Farray_Abs;
 	use Debug;
@@ -47,9 +46,14 @@ class FarrayNode extends FarrayObject
 	 * @throws FarrayError
 	 * @return void
 	 */
-	public function __get(string $field)
+	public function __gdet(string $field)
 	{
-		return $this->error("asdad");
+		debug("asdadaadasd");
+	}
+	
+	public function __get($name)
+	{
+		debug("asdadaadasd");
 	}
 	
 	private function isSettedAsNodeVal($name)
@@ -62,91 +66,99 @@ class FarrayNode extends FarrayObject
 		return $this->isFarrayNode(parent::offsetGet($name));
 	}
 	
-	/**
-	 * Setter
-	 *
-	 * @param string $field
-	 * @param string $value
-	 * @return FarrayNode
-	 */
-	public function __set(string $field, $value = '')
+	public function getValue(string $field)
 	{
-		if ($this->exists($field))
-		{
-			if ($this->isRawField($field))
-			{
-				parent::offsetSet($field, $value);
-			}
-			elseif ($this->isSettedAsNodeVal($field) or $this->isSettedAsNode($field))
-			{
-				$this->get($field)->set($value);
-			}
-			else
-			{
-				parent::offsetSet($field, $value);
-			}
-		}
-		else
-		{
-			parent::offsetSet($field, $value);
-		}
-		
-		return $this;
+		return $this->$field->val();
 	}
 	
 	/**
-	 * Get value as FarrayValue
+	 * Fired when $Node->$field is accessed
+	 *
+	 * @param mixed $field
+	 * @return FarrayValue|mixed
+	 */
+	public function offsetGet($field)
+	{
+		if (isset($this->fieldsThatAreGettedOnce[$field]))
+		{
+			return parent::offsetGet($field);
+		}
+		if ($this->isRawField($field) and $this->exists($field))
+		{
+			$this->fieldsThatAreGettedOnce[$field] = true;
+			
+			return parent::offsetGet($field);
+		}
+		if (method_exists($this, '__setFieldValue') and !isset($this->__setFieldValueIsCalled[$field]))
+		{
+			$this->__setFieldValueIsCalled[$field] = true;
+			$this->__setFieldValue($field);
+		}
+		if (!$this->exists($field))
+		{
+			$this->error("Field $field does not exists");
+		}
+		$value = parent::offsetGet($field);
+		if ($this->_hasFieldValueParser($field))
+		{
+			$Parser = $this->_getFieldValueParser($field);
+			$value  = callback($Parser->parser, $Parser->scope, [$value]);
+		}
+		
+		if (!$this->isFarrayValue($value) and !$this->isRawField($field))
+		{
+			$value = new FarrayValue($field, $value, $this);
+		}
+		$this->fieldsThatAreGettedOnce[$field] = true;
+		parent::offsetSet($field, $value);
+		
+		return $value;
+	}
+	
+	/**
+	 * get value as FarrayValue
 	 *
 	 * @param string     $field
 	 * @param mixed|null $returnOnNotFound - return this value when $field does not exists
-	 * @return mixed|object|null
+	 * @return FarrayValue
 	 */
 	public function Val(string $field, $returnOnNotFound = null)
 	{
 		if (!$this->exists($field))
 		{
-			return new FarrayValue($field, $returnOnNotFound, $this);
+			$value = $returnOnNotFound;
 		}
-		if ($this->isRawField($field))
+		else
 		{
-			return new FarrayValue($field, $this->_getStoredValue($field), $this);
+			$value = $this->$field;
 		}
-		
-		return $this->offsetGet($field);
-	}
-	
-	public function offsetGet($field)
-	{
-		$value = $this->_getStoredValue($field);
-		if ($this->isRawField($field))
+		if ($field == 'hideSubMenu')
+		{
+			addExtraErrorInfo('hideSubMenuyuuuuu', $this->isFarrayValue($value));
+		}
+		if ($this->isFarrayValue($value))
 		{
 			return $value;
 		}
-		if (!$this->isFarrayValue($value))
-		{
-			return new FarrayValue($field, $value, $this);
-		}
 		
-		return $value;
+		return new FarrayValue($field, $value, $this);
 	}
-	
 	
 	/**
-	 * get field value
+	 * set Raw field
 	 *
-	 * @param string     $field
-	 * @param mixed|null $returnOnNotFound - return this value when $field does not exists
-	 * @return mixed|object|null
+	 * @param string $field
+	 * @param mixed  $newVal
+	 * @return $this
 	 */
-	public function get(string $field, $returnOnNotFound = null)
+	public function setRaw(string $field, $newVal): FarrayObject
 	{
-		if (!$this->exists($field))
-		{
-			return $returnOnNotFound;
-		}
+		$this->addRawField($field);
+		$this->set($field, $newVal);
 		
-		return $this->offsetGet($field);
+		return $this;
 	}
+	
 	
 	/**
 	 * Implode field values with $glue

@@ -3,8 +3,6 @@
 namespace Infira\Farray;
 
 use Infira\Farray\plugins\Farray_Abs;
-use FarrayValueExtendor;
-use FarrayValueExtendor2;
 use Infira\Utils\Variable;
 use Infira\Utils\Is;
 use Infira\Utils\Date;
@@ -16,11 +14,10 @@ use Infira\Utils\Error;
 class FarrayValue
 {
 	private $TYPE = 'value';
-	use FarrayValueExtendor;
-	use FarrayValueExtendor2;
+	use \FarrayValueExtendor;
 	use Farray_Abs;
 	
-	private $value; //actual current value
+	public $value; //actual current value
 	
 	/**
 	 * Original value wich was setted by __constructor
@@ -68,7 +65,7 @@ class FarrayValue
 	
 	public function val()
 	{
-		return $this->_getStoredValue(null);
+		return $this->value;
 	}
 	
 	/**
@@ -208,6 +205,7 @@ class FarrayValue
 		{
 			return $this->value === $val;
 		}
+		addExtraErrorInfo('$this->value', $this->value);
 		
 		return $this->value == $val;
 	}
@@ -1056,13 +1054,23 @@ class FarrayValue
 	}
 	
 	/**
-	 * Convert to int
+	 * Makes current value int
 	 *
 	 * @return $this
 	 */
 	public function int()
 	{
-		return $this->newValue(intval($this->value));
+		return $this->newValue($this->toInt());
+	}
+	
+	/**
+	 * Convert to int
+	 *
+	 * @return int
+	 */
+	public function toInt(): int
+	{
+		return intval($this->value);
 	}
 	
 	/**
@@ -1083,8 +1091,19 @@ class FarrayValue
 	 */
 	public function float()
 	{
-		return $this->newValue(floatval($this->value));
+		return $this->newValue($this->toFloat());
 	}
+	
+	/**
+	 * Convert to float
+	 *
+	 * @return float
+	 */
+	public function toFloat(): float
+	{
+		return floatval($this->value);
+	}
+	
 	
 	/**
 	 * Convert value to number
@@ -1265,6 +1284,18 @@ class FarrayValue
 	}
 	
 	/**
+	 * Get random item from array
+	 *
+	 * @return $this
+	 */
+	public function randomItem()
+	{
+		$items = $this->value;
+		
+		return $this->newValue($items[array_rand($items)]);
+	}
+	
+	/**
 	 * Converts value to FarrayList
 	 *
 	 * @return $this
@@ -1330,7 +1361,7 @@ class FarrayValue
 	 */
 	public function getAmmountByPercent($percent)
 	{
-		$sum     = $this->float()->value;
+		$sum     = $this->toFloat();
 		$percent = floatval($percent);
 		$newVal  = ($sum * $percent) / 100;
 		

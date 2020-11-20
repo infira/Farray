@@ -1,3 +1,7 @@
 <?php
-trait FarrayValueExtendor {}
+
+trait FarrayValueExtendor
+{
+}
+
 ?>

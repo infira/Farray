@@ -3,8 +3,6 @@
 namespace Infira\Farray;
 
 use Infira\Farray\plugins\Farray_Abs;
-use FarrayExtendor;
-use FarrayExtendor2;
 use Infira\Farray\plugins\Debug;
 use ArrayIterator;
 use Infira\Utils\Is;
@@ -13,22 +11,20 @@ use Infira\Utils\Variable;
 class FarrayList extends ArrayIterator
 {
 	private $TYPE = 'list';
-	use FarrayExtendor;
-	use FarrayExtendor2;
-	
+	use \FarrayExtendor;
 	use Farray_Abs;
-	
 	use Debug;
 	
-	private $listKeys               = [];
-	private $firstKey               = false;
-	private $lastKey                = false;
-	private $count                  = 0;
-	private $keyNr                  = 0;
+	private $listKeys                = [];
+	public  $firstKey                = false;
+	public  $lastKey                 = false;
+	private $count                   = 0;
+	private $keyNr                   = 0;
+	public  $registeredFieldValues   = [];
 	public  $ListInfo;
 	public  $PagesInfo;
 	private $nodeClassName;
-	private $allowedListNodeClasses = ["FarrayNode", "FarrayList"];
+	private $fieldsThatAreGettedOnce = [];
 	private $IDFIeld;
 	
 	public function __construct(array $array = [], $listNodeClassName = '\Infira\Farray\FarrayNode')
@@ -84,33 +80,28 @@ class FarrayList extends ArrayIterator
 	/**
 	 * Get ListNode at $index
 	 *
-	 * @param string $index
+	 * @param mixed $index
 	 * @return FarrayNode
 	 */
 	public function offsetGet($index)
 	{
-		$row = $this->parseRow(parent::offsetGet($index));
+		if (isset($this->fieldsThatAreGettedOnce[$index]))
+		{
+			return parent::offsetGet($index);
+		}
+		$row = parent::offsetGet($index);
+		if (isset($this->rowParser['parser']))
+		{
+			$row = callback($this->rowParser['parser'], $this->rowParser['scope'], [$row]);
+		}
 		if (is_array($row) or Is::isClass($row, "stdClass"))
 		{
 			$row = $this->createListNode($row);
 		}
-		elseif (is_object($row))
-		{
-			$class = get_class($row);
-			if (!in_array($class, $this->allowedListNodeClasses))
-			{
-				addExtraErrorInfo("ClassName", $class);
-				$this->error("Farray parse value unkonwn class $class");
-			}
-		}
+		$this->fieldsThatAreGettedOnce[$index] = true;
 		parent::offsetSet($index, $row);
 		
 		return $row;
-	}
-	
-	public function addAllowedListNodeClass($classes)
-	{
-		$this->allowedListNodeClasses = array_merge($this->allowedListNodeClasses, Variable::toArray($classes));
 	}
 	
 	protected function createListNode($value)
@@ -120,13 +111,12 @@ class FarrayList extends ArrayIterator
 	}
 	
 	/**
-	 * @param string $name
-	 * @param array  $array
+	 * @param array $array
 	 * @return FarrayList
 	 */
-	public function createNewList(string $name, $array = [])
+	public function createNewList($array = [])
 	{
-		return new $this($name, $array);
+		return new $this($array);
 	}
 	
 	public function checkArray()
@@ -176,10 +166,11 @@ class FarrayList extends ArrayIterator
 	 * Add item to storage
 	 *
 	 * @param object|array $item
-	 * @param string       $addFieldValueAsKey
+	 * @param string|null  $addFieldValueAsKey
+	 * @throws FarrayError
 	 * @return number
 	 */
-	public function add($item, string $addFieldValueAsKey = "")
+	public function add($item, string $addFieldValueAsKey = null)
 	{
 		$this->count++;
 		if (empty($item))
@@ -194,13 +185,13 @@ class FarrayList extends ArrayIterator
 		{
 			$Node = $this->createListNode($item);
 		}
-		if ($addFieldValueAsKey === false)
+		if ($addFieldValueAsKey)
 		{
-			$addKey = $this->keyNr;
+			$addKey = $Node->$addFieldValueAsKey->value;
 		}
 		else
 		{
-			$addKey = $Node->get($addFieldValueAsKey)->value;
+			$addKey = $this->keyNr;
 		}
 		$this->keyNr++;
 		$this->offsetSet($addKey, $Node);
@@ -312,7 +303,7 @@ class FarrayList extends ArrayIterator
 		 * @var FarrayList
 		 */
 		$newArr  = array_filter($this->getArrayCopy(), [$this, "doFilter"]);
-		$newList = $this->createNewList(false, $newArr);
+		$newList = $this->createNewList($newArr);
 		$newList->construct();
 		
 		return $newList;
@@ -329,7 +320,7 @@ class FarrayList extends ArrayIterator
 	{
 		foreach ($this as $Row)
 		{
-			if ($Row->get($field)->is($value))
+			if ($Row->$field->is($value))
 			{
 				return $Row;
 			}
@@ -351,7 +342,7 @@ class FarrayList extends ArrayIterator
 		{
 			foreach ($this as $Row)
 			{
-				$outout[] = $Row->get($field)->value;
+				$outout[] = $Row->$field->value;
 			}
 		}
 		
@@ -394,16 +385,6 @@ class FarrayList extends ArrayIterator
 		$this->rowParser['scope']  = $scope;
 	}
 	
-	public function parseRow($row)
-	{
-		if (!isset($this->rowParser['parser']))
-		{
-			return $row;
-		}
-		
-		return callback($this->rowParser['parser'], $this->rowParser['scope'], [$row]);
-	}
-	
 	//##################### SOF manipulation
 	public function orderBy($field, $desc = false)
 	{
@@ -432,7 +413,7 @@ class FarrayList extends ArrayIterator
 			{
 				if ($Row->exists($field))
 				{
-					$val = $Row->get($field)->value;
+					$val = $Row->$field->value;
 					if (!array_key_exists($val, $distincts))
 					{
 						$distincts[$val] = $val;
@@ -452,7 +433,7 @@ class FarrayList extends ArrayIterator
 		 * @var FarrayList
 		 */
 		$newArr  = array_slice($this->getArrayCopy(), $nr1, $nr2, $preserveKeys);
-		$newList = $this->createNewList(false, $newArr);
+		$newList = $this->createNewList($newArr);
 		$newList->construct();
 		
 		return $newList;
@@ -489,7 +470,7 @@ class FarrayList extends ArrayIterator
 		$chunked = array_chunk($this->getArrayCopy(), $nr);
 		foreach ($chunked as $key => $chunk)
 		{
-			$new = $this->createNewList(UNDEFINDED, $chunk);
+			$new = $this->createNewList($chunk);
 			$new->construct();
 			$NewList->offsetSet($key, $new);
 		}
@@ -500,8 +481,7 @@ class FarrayList extends ArrayIterator
 	/**
 	 * Get grouped list
 	 *
-	 * @param string $name
-	 *            - group by field name
+	 * @param string $name - group by field name
 	 * @return FarrayList
 	 */
 	public function group($keyField, $nameField = false)
@@ -509,17 +489,37 @@ class FarrayList extends ArrayIterator
 		$newList = $this->createNewList();
 		foreach ($this as $addKey => $item)
 		{
-			$indexKeyValue = $item->getVal($keyField)->value;
+			$indexKeyValue = $item->$keyField->value;
 			$name          = "";
 			if ($nameField != false)
 			{
-				$name = $item->getVal($nameField)->value;
+				$name = $item->$nameField->value;
 			}
 			$newList->registerKeyList($indexKeyValue, $name);
 			$newList->addToKey($indexKeyValue, $item);
 		}
 		
 		return $newList;
+	}
+	
+	public function registerFieldValues($field, $fieldValue, $val)
+	{
+		if (!isset($this->registeredFieldValues[$field][$fieldValue]))
+		{
+			$val->isFirst = true;
+		}
+		else
+		{
+			$c                                                            = count($this->registeredFieldValues[$field][$fieldValue]) - 1;
+			$this->registeredFieldValues[$field][$fieldValue][$c]->isLast = false;
+		}
+		$val->isLast                                        = true;
+		$this->registeredFieldValues[$field][$fieldValue][] = $val;
+	}
+	
+	public function mergeRegisteredFieldValues($mergeable)
+	{
+		$this->registeredFieldValues = array_merge($this->registeredFieldValues, $mergeable);
 	}
 	
 	public function constructPages($limit, $perpage, $countAll = 0)

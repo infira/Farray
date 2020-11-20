@@ -3,6 +3,7 @@
 namespace Infira\Farray;
 
 use ArrayObject;
+use Infira\Utils\Is;
 
 class FarrayObject extends ArrayObject
 {
@@ -30,6 +31,7 @@ class FarrayObject extends ArrayObject
 		{
 			$array = [];
 		}
+		//addExtraErrorInfo('FarrayObjectData', $array);
 		parent::__construct($array, ArrayObject::ARRAY_AS_PROPS);
 	}
 	
@@ -37,7 +39,7 @@ class FarrayObject extends ArrayObject
 	{
 		if (!$this->exists($field))
 		{
-			$this->error('Field "' . $field . '" not found');
+			throw new FarrayError('Field "' . $field . '" not found');
 		}
 		
 		return parent::offsetGet($field);
@@ -74,7 +76,7 @@ class FarrayObject extends ArrayObject
 	 */
 	public function set(string $field, $newVal): FarrayObject
 	{
-		$this->offsetSet($field, $newVal);
+		parent::offsetSet($field, $newVal);
 		
 		return $this;
 	}
@@ -88,7 +90,7 @@ class FarrayObject extends ArrayObject
 	 */
 	public function setRef(string $field, &$value): FarrayObject
 	{
-		$this->offsetSet($field, $value);
+		parent::offsetSet($field, $value);
 		
 		return $this;
 	}
@@ -123,7 +125,7 @@ class FarrayObject extends ArrayObject
 		$val   = $this->get($field, [], false);
 		$val[] = $newVal;
 		
-		$this->offsetSet($field, $val);
+		parent::offsetSet($field, $val);
 		
 		return $this;
 	}
@@ -219,7 +221,7 @@ class FarrayObject extends ArrayObject
 	{
 		if ($this->exists($field))
 		{
-			$this->offsetUnset($field);
+			parent::offsetUnset($field);
 		}
 		
 		return $this;
@@ -233,7 +235,7 @@ class FarrayObject extends ArrayObject
 	 */
 	public function exists(string $field): bool
 	{
-		return $this->offsetExists($field);
+		return parent::offsetExists($field);
 	}
 	
 	
@@ -256,7 +258,7 @@ class FarrayObject extends ArrayObject
 	 */
 	public function isEmpty(string $field): bool
 	{
-		if (!$this->offsetExists($field))
+		if (!$this->exists($field))
 		{
 			return true;
 		}
@@ -272,7 +274,7 @@ class FarrayObject extends ArrayObject
 	 */
 	public function checkArray(string $field)
 	{
-		if ($this->offsetExists($field) and checkArray($this->get($field)))
+		if ($this->exists($field) and checkArray($this->get($field)))
 		{
 			return true;
 		}
@@ -284,7 +286,7 @@ class FarrayObject extends ArrayObject
 	 * Get all
 	 *
 	 * @param bool $getAsStdClass - get all as stcClass
-	 * @return array|stdClass
+	 * @return array|\stdClass
 	 */
 	public function getAll($getAsStdClass = false)
 	{

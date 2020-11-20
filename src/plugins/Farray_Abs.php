@@ -25,38 +25,6 @@ trait Farray_Abs
 	 */
 	protected $List = null; //related List
 	
-	public function _getStoredValue(string $index = null)
-	{
-		if (!$this->exists($index))
-		{
-			addExtraErrorInfo('$this', $this);
-			$this->error("Field($index) not found");
-		}
-		if (method_exists($this, '_getFieldValue'))
-		{
-			$value = $this->__getFieldValue($index);
-		}
-		else
-		{
-			if ($this->isTypeValue())
-			{
-				$value = $this->value;
-			}
-			else
-			{
-				$value = parent::offsetGet($index);
-			}
-		}
-		if ($this->_hasFieldValueParser($index))
-		{
-			$Parser = $this->_getFieldValueParser($index);
-			$value  = callback($Parser->parser, $Parser->scope, [$value]);
-		}
-		
-		return $value;
-		
-	}
-	
 	private $valueparsers = [];
 	
 	public function _setFieldValueParser(string $index, callable $parser, object $scope = null)
@@ -151,12 +119,12 @@ trait Farray_Abs
 	
 	private function isFarrayValue($val)
 	{
-		return Is::isClass($val, "FarrayValue");
+		return Is::isClass($val, "\Infira\Farray\FarrayValue");
 	}
 	
 	private function isFarrayNode($val)
 	{
-		return Is::isClass($val, "FarrayNode");
+		return Is::isClass($val, "\Infira\Farray\FarrayNode");
 	}
 	
 	private function isTypeNode()
@@ -179,3 +147,5 @@ trait Farray_Abs
 		throw new FarrayError($msg);
 	}
 }
+
+?>
