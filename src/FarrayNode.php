@@ -9,22 +9,23 @@ use ArrayObject;
 
 class FarrayNode extends FarrayObject
 {
+	use \FarrayNodeExtendor;
+	use Farray_Abs;
+	use Debug;
+	
 	private $TYPE                    = "node";
 	private $fieldsThatAreGettedOnce = [];
 	private $__setFieldValueIsCalled = [];
-	
-	use \FarrayNodeExtendor;
-	
-	use Farray_Abs;
-	use Debug;
+	private $valueClassName = '\Infira\Farray\FarrayValue';
 	
 	/**
 	 * @param array $array
 	 * @param bool  $List
 	 */
-	public function __construct($array = [], &$List = false)
+	public function __construct($array = [], &$List = false, $valueClassName = '\Infira\Farray\FarrayValue')
 	{
-		$this->List = &$List;
+		$this->List           = &$List;
+		$this->valueClassName = $valueClassName;
 		parent::__construct(Variable::toArray($array), ArrayObject::ARRAY_AS_PROPS);
 	}
 	
@@ -54,6 +55,14 @@ class FarrayNode extends FarrayObject
 	public function __get($name)
 	{
 		debug("asdadaadasd");
+	}
+	
+	/**
+	 * @param string $valueClassName
+	 */
+	public function setValueClassName(string $valueClassName): void
+	{
+		$this->valueClassName = $valueClassName;
 	}
 	
 	private function isSettedAsNodeVal($name)
@@ -107,7 +116,7 @@ class FarrayNode extends FarrayObject
 		
 		if (!$this->isFarrayValue($value) and !$this->isRawField($field))
 		{
-			$value = new FarrayValue($field, $value, $this);
+			$value = $this->createFarrayValue($field, $value);
 		}
 		$this->fieldsThatAreGettedOnce[$field] = true;
 		parent::offsetSet($field, $value);
@@ -141,7 +150,7 @@ class FarrayNode extends FarrayObject
 			return $value;
 		}
 		
-		return new FarrayValue($field, $value, $this);
+		return $this->createFarrayValue($field, $value);
 	}
 	
 	/**
@@ -169,7 +178,7 @@ class FarrayNode extends FarrayObject
 	 */
 	public function implode(string $fieldNames, string $glue = ",")
 	{
-		return new FarrayValue(false, parent::implode($fieldNames));
+		return $this->createFarrayValue(false, parent::implode($fieldNames));
 	}
 	
 	/**
@@ -215,6 +224,13 @@ class FarrayNode extends FarrayObject
 		parent::offsetSet($field, new FarrayNode($data));
 		
 		return $this;
+	}
+	
+	private function createFarrayValue(string $field, $value)
+	{
+		$cn = $this->valueClassName;
+		
+		return new $cn($field, $value, $this);
 	}
 }
 

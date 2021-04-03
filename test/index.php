@@ -10,6 +10,7 @@ require_once "../src/FarrayObject.php";
 require_once "../src/FarrayValue.php";
 require_once "../src/FarrayNode.php";
 require_once "../src/FarrayList.php";
+require_once "MyFarrayNode.php";
 
 
 define("ERROR_LEVEL", -1);

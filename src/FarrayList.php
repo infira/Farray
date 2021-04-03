@@ -106,7 +106,6 @@ class FarrayList extends ArrayIterator
 	
 	protected function createListNode($value)
 	{
-		
 		return new $this->nodeClassName($value, $this);
 	}
 	
