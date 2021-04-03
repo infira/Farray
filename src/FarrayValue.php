@@ -85,7 +85,7 @@ class FarrayValue
 	 * @param bool  $returnThis
 	 * @return $this
 	 */
-	private function newValue($newVal, $returnThis = true)
+	public function newValue($newVal, $returnThis = true)
 	{
 		if (!$returnThis)
 		{
