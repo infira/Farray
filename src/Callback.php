@@ -9,7 +9,6 @@ class Callback extends ArrayIterator
 {
 	
 	private $callback;
-	private $scope;
 	private $callbackExtraParams = [];
 	
 	public function __construct($value = [])
@@ -17,18 +16,17 @@ class Callback extends ArrayIterator
 		parent::__construct($value);
 	}
 	
-	public function setCallback(callable $callback, array $callbackExtraParams = [], $scope = null)
+	public function setCallback(callable $callback, array $callbackExtraParams = [])
 	{
 		$this->callback            = $callback;
-		$this->scope               = $scope;
 		$this->callbackExtraParams = $callbackExtraParams;
 	}
 	
-	public function each($callback, array $extraParams = [], $scope = null)
+	public function each($callback, array $extraParams = []): Callback
 	{
 		foreach ($this as $key => $row)
 		{
-			$res = $this->rowCallback($row, $key, $callback, $extraParams, $scope);
+			$res = $this->rowCallback($row, $key, $callback, $extraParams);
 			if ($res == '_______BREAK_______')
 			{
 				break;
@@ -43,16 +41,16 @@ class Callback extends ArrayIterator
 		return $this->rowCallback(parent::current(), parent::key(), null);
 	}
 	
-	private function rowCallback($row, $key, $callback, array $extraParams = [], $scope = null)
+	private function rowCallback($row, $key, $callback, array $extraParams = [])
 	{
 		$row = (object)$row;
 		if ($this->callback)
 		{
-			$row = callback($this->callback, $this->scope, array_merge([$row, $key], $this->callbackExtraParams));
+			$row = call_user_func_array($this->callback, array_merge([$row, $key], $this->callbackExtraParams));
 		}
 		if ($callback)
 		{
-			$row = callback($callback, $scope, array_merge([$row, $key], $extraParams));
+			$row = call_user_func_array($callback, array_merge([$row, $key], $extraParams));
 		}
 		if (is_null($row))
 		{

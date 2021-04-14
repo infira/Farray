@@ -11,11 +11,6 @@ use Infira\Utils\Variable;
 trait Farray_Abs
 {
 	/**
-	 * @var callable
-	 */
-	public $valueParser      = null;
-	public $valueParserScope = null;
-	/**
 	 * @var FarrayNode
 	 */
 	public    $Node      = null; //related Node
@@ -27,13 +22,13 @@ trait Farray_Abs
 	
 	private $valueparsers = [];
 	
-	public function _setFieldValueParser(string $index, callable $parser, object $scope = null)
+	public function _setFieldValueParser(string $index, callable $parser)
 	{
 		if ($this->isTypeValue())
 		{
 			if ($this->Node and $this->nodeField)
 			{
-				return $this->Node->_setFieldValueParser($this->nodeField, $parser, $scope);
+				return $this->Node->_setFieldValueParser($this->nodeField, $parser);
 			}
 			else
 			{
@@ -45,11 +40,11 @@ trait Farray_Abs
 		{
 			if ($this->List)
 			{
-				return $this->List->_setFieldValueParser($index, $parser, $scope);
+				return $this->List->_setFieldValueParser($index, $parser);
 			}
 		}
 		
-		$this->valueparsers[$index] = (object)["parser" => $parser, "scope" => $scope];
+		$this->valueparsers[$index] = $parser;
 	}
 	
 	public function _hasFieldValueParser(string $index): bool
@@ -73,7 +68,7 @@ trait Farray_Abs
 		return (isset($this->valueparsers[$index]));
 	}
 	
-	public function _getFieldValueParser(string $index)
+	public function _getFieldValueParser(string $index): callable
 	{
 		if ($this->isTypeValue())
 		{
@@ -132,12 +127,12 @@ trait Farray_Abs
 		return $this->TYPE == 'node';
 	}
 	
-	private function isTypeValue()
+	private function isTypeValue(): bool
 	{
 		return $this->TYPE == 'value';
 	}
 	
-	private function isTypeList()
+	private function isTypeList(): bool
 	{
 		return $this->TYPE == 'lisst';
 	}

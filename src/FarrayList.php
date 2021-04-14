@@ -26,6 +26,10 @@ class FarrayList extends ArrayIterator
 	private $nodeClassName;
 	private $fieldsThatAreGettedOnce = [];
 	private $IDFIeld;
+	/**
+	 * @var null|callable
+	 */
+	private $rowParser = null;
 	
 	public function __construct(array $array = [], $listNodeClassName = '\Infira\Farray\FarrayNode')
 	{
@@ -90,9 +94,9 @@ class FarrayList extends ArrayIterator
 			return parent::offsetGet($index);
 		}
 		$row = parent::offsetGet($index);
-		if (isset($this->rowParser['parser']))
+		if ($this->rowParser !== null)
 		{
-			$row = callback($this->rowParser['parser'], $this->rowParser['scope'], [$row]);
+			$row = call_user_func_array($this->rowParser, [$row]);
 		}
 		if (is_array($row) or Is::isClass($row, "stdClass"))
 		{
@@ -367,21 +371,17 @@ class FarrayList extends ArrayIterator
 	/**
 	 * Set parser during getting value
 	 *
-	 * @param string      $field
-	 * @param callable    $parser
-	 * @param object|null $scope - optional
+	 * @param string   $field
+	 * @param callable $parser
 	 */
-	public function setFieldValueParser(string $field, callable $parser, object $scope = null)
+	public function setFieldValueParser(string $field, callable $parser)
 	{
-		$this->_setFieldValueParser($field, $parser, $scope);
+		$this->_setFieldValueParser($field, $parser);
 	}
 	
-	private $rowParser = [];
-	
-	public function setRowParser(callable $parser, $scope = false)
+	public function setRowParser(callable $parser)
 	{
-		$this->rowParser['parser'] = $parser;
-		$this->rowParser['scope']  = $scope;
+		$this->rowParser = $parser;
 	}
 	
 	//##################### SOF manipulation

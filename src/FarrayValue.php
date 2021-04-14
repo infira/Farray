@@ -159,12 +159,11 @@ class FarrayValue
 	/**
 	 * Set parser during getting value
 	 *
-	 * @param callable    $parser
-	 * @param object|null $scope - optional
+	 * @param callable $parser
 	 */
-	public function setFieldValueParser(callable $parser, object $scope = null)
+	public function setFieldValueParser(callable $parser)
 	{
-		$this->_setFieldValueParser(null, $parser, $scope);
+		$this->_setFieldValueParser(null, $parser);
 	}
 	
 	
@@ -1384,16 +1383,14 @@ class FarrayValue
 	 * Convert value to array and calls $callback from each item
 	 *
 	 * @param callable $callback
-	 * @param null     $scope
-	 * @throws Error
 	 * @return array
 	 */
-	public function each(callable $callback, $scope = null)
+	public function each(callable $callback)
 	{
 		$r = [];
 		foreach ($this->toArray()->val() as $key => $v)
 		{
-			$v       = callback($callback, $scope, [$v]);
+			$v       = call_user_func_array($callback, [$v]);
 			$r[$key] = new $this($key, $v);
 		}
 		

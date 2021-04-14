@@ -16,7 +16,7 @@ class FarrayNode extends FarrayObject
 	private $TYPE                    = "node";
 	private $fieldsThatAreGettedOnce = [];
 	private $__setFieldValueIsCalled = [];
-	private $valueClassName = '\Infira\Farray\FarrayValue';
+	private $valueClassName          = '\Infira\Farray\FarrayValue';
 	
 	/**
 	 * @param array $array
@@ -110,8 +110,7 @@ class FarrayNode extends FarrayObject
 		$value = parent::offsetGet($field);
 		if ($this->_hasFieldValueParser($field))
 		{
-			$Parser = $this->_getFieldValueParser($field);
-			$value  = callback($Parser->parser, $Parser->scope, [$value]);
+			$value = call_user_func_array($this->_getFieldValueParser($field), [$value]);
 		}
 		
 		if (!$this->isFarrayValue($value) and !$this->isRawField($field))

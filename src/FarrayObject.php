@@ -373,13 +373,12 @@ class FarrayObject extends ArrayObject
 	 * Iterate items with $callback
 	 *
 	 * @param callable $callback
-	 * @param object   $scope
 	 */
-	public function each(callable $callback, $scope = null)
+	public function each(callable $callback)
 	{
 		foreach ($this->getIterator() as $field => $val)
 		{
-			callback($callback, $scope, [$val, $field]);
+			call_user_func_array($callback, [$val, $field]);
 		}
 	}
 	
