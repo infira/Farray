@@ -26,7 +26,7 @@ class FarrayNode extends FarrayObject
 	{
 		$this->List           = &$List;
 		$this->valueClassName = $valueClassName;
-		parent::__construct(Variable::toArray($array), ArrayObject::ARRAY_AS_PROPS);
+		parent::__construct(Variable::toArray($array), false);
 	}
 	
 	/**
