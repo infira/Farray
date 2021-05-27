@@ -9,7 +9,6 @@ use Infira\Utils\Date;
 use Infira\Utils\Fix;
 use Infira\Utils\Regex;
 use Infira\Utils\Vat;
-use Infira\Utils\Error;
 
 class FarrayValue
 {
